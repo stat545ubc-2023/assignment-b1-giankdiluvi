@@ -387,11 +387,59 @@ logsumexp &lt;- function(x,...){
   result &lt;- x_max + log(sum(exp(x-x_max,...)))
   return(result)
 }</code></pre>
+<div id="some-examples" class="section level2">
+<h2>Some examples</h2>
+<p>First an example where using the LogSumExp trick doesn’t actually
+help, just to verify that we obtain the correct answer.</p>
+<pre class="r"><code>my_x = c(1:10)
+trick &lt;- logsumexp(my_x)
+direct &lt;- log(sum(exp(my_x)))
+print(paste(&quot;The correct answer is &quot;, direct, &quot; and the LogSumExp trick yields &quot;, trick))</code></pre>
+<pre><code>## [1] &quot;The correct answer is  10.4586297444267  and the LogSumExp trick yields  10.4586297444267&quot;</code></pre>
+<p>Now an example where the trick actually helps:</p>
 <pre class="r"><code>my_x = c(-1e5,-1e12)
-logsumexp(my_x)</code></pre>
-<pre><code>## [1] -1e+05</code></pre>
-<pre class="r"><code>log(sum(exp(my_x)))</code></pre>
-<pre><code>## [1] -Inf</code></pre>
+trick &lt;- logsumexp(my_x)
+direct &lt;- log(sum(exp(my_x)))
+print(paste(&quot;The correct answer is &quot;, trick, &quot; but the naive method yields &quot;, direct))</code></pre>
+<pre><code>## [1] &quot;The correct answer is  -1e+05  but the naive method yields  -Inf&quot;</code></pre>
+<p>The naive computation doesn’t work because both <span class="math inline">\(\exp(-10^{5})\)</span> and <span class="math inline">\(\exp(-10^{12})\)</span> are smaller than the
+computer precision can represent, and so they is rounded down to 0.
+Added up they’re still 0 and <span class="math inline">\(\log 0\)</span>
+results in <span class="math inline">\(-\infty\)</span>. But the
+LogSumExp trick avoids this since <span class="math inline">\(x^\star =
+-10^{5}\)</span> and the sum terms become <span class="math inline">\(\exp(-10^{5}+10^{5})=1\)</span> and <span class="math inline">\(\exp(-10^{12}+10^{5})\)</span> which is still
+represented as 0. The log of sum of exps is now 0, but to that we add
+<span class="math inline">\(x^\star=-10^{5}\)</span>. Very large
+negative but not <span class="math inline">\(-\infty\)</span>.</p>
+<p>Now a more realistic example where the trick also helps. Suppose we
+want to evaluate the log pdf of a mixture model with 10 elements in the
+mixture: <span class="math display">\[
+  \ log p(x) = \log \sum_{n=1}^{10} p_n(x),
+\]</span> where <span class="math inline">\(p_n(x)\)</span> is the pdf
+of the <span class="math inline">\(n\)</span>th mixture element, which
+in our case is a Normal<span class="math inline">\((10n,0.1^2)\)</span>
+distribution. Note that <span class="math inline">\(p_n(x) = \exp\log
+p_n(x)\)</span>, which allows us to cast the problem in the LogSumExp
+trick format. Below we set <span class="math inline">\(x=54\)</span> and
+show that the naive method produces underflow while the LogSumExp trick
+does not.</p>
+<pre class="r"><code># setup
+means &lt;- 10*(1:10)
+sd &lt;- 0.1
+test_x &lt;- 54
+
+# calculate log pdfs
+lprbs &lt;- rep(0,10)
+for(n in 1:10){
+  lprbs[n] &lt;- dnorm(test_x, mean = means[n], sd = sd, log = TRUE)
+}
+
+# estimate log pdf of mixture model
+trick &lt;- logsumexp(lprbs)
+direct &lt;- log(sum(exp(lprbs)))
+print(paste(&quot;The LogSumExp trick yields &quot;, trick, &quot; but the naive method yields &quot;, direct))</code></pre>
+<pre><code>## [1] &quot;The LogSumExp trick yields  -798.616353440211  but the naive method yields  -Inf&quot;</code></pre>
+</div>
 
 
 
