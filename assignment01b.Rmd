@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(testthat)
 ```
 
 I'll code the [LogSumExp trick](https://en.wikipedia.org/wiki/LogSumExp).
@@ -39,13 +40,12 @@ which makes the resulting operation more numerically stable.
 #' 
 #' @return numeric, single number
 logsumexp <- function(x,...){
+  if(!is.numeric(x)) stop('x should be numeric, not ', class(x)[1])
   x_max <- max(x,...)
   result <- x_max + log(sum(exp(x-x_max,...)))
   return(result)
 }
-
 ```
-
 
 ## Some examples
 
@@ -70,7 +70,7 @@ print(paste("The correct answer is ", trick, " but the naive method yields ", di
 
 The naive computation doesn't work because both $\exp(-10^{5})$
 and $\exp(-10^{12})$ are smaller than the
-computer precision can represent, and so they is rounded down to 0.
+computer precision can represent, and so they are rounded down to 0.
 Added up they're still 0 and $\log 0$ results in $-\infty$.
 But the LogSumExp trick avoids this since
 $x^\star = -10^{5}$ and the sum terms become
@@ -102,12 +102,42 @@ test_x <- 54
 
 # calculate log pdfs
 lprbs <- rep(0,10)
-for(n in 1:10){
-  lprbs[n] <- dnorm(test_x, mean = means[n], sd = sd, log = TRUE)
-}
+for(n in 1:10) lprbs[n] <- dnorm(test_x, mean = means[n], sd = sd, log = TRUE)
 
 # estimate log pdf of mixture model
 trick <- logsumexp(lprbs)
 direct <- log(sum(exp(lprbs)))
 print(paste("The LogSumExp trick yields ", trick, " but the naive method yields ", direct))
 ```
+
+
+## Testing the function
+
+We carry out two different types of tests.
+First we input non-numerics, which should return an error.
+Specifically, we input a boolean vector
+and a vector with a string.
+Then we verify that the function behaves as expected:
+
+- evaluating LogSumExp$(x\in\mathbb{R})$ should return $x$ 
+(i.e., LogSumExp is equal to the identity map in $\mathbb{R}$);
+- evaluating LogSumExp$(x\in\mathbb{R}^N)$
+should return a scalar (i.e., flattens vectors);
+- and LogSumExp$(-10^{10},\dots,-10^{15})$ 
+should return something larger than $-\infty$
+(whereas the naive method returns $-\infty$ due to underflow).
+
+```{r test}
+testthat::test_that("Input has to be numeric",{
+  testthat::expect_error(logsumexp(c(TRUE,FALSE))) # boolean input
+  testthat::expect_error(logsumexp(c(2,"3"))) # string input
+})
+
+testthat::test_that("Output behaves as expected",{
+  testthat::expect_equal(3,logsumexp(3)) # logsumexp(float) = float
+  testthat::expect_length(logsumexp(1:100),1) # logsumexp(vector) is float
+  testthat::expect_gt(logsumexp(-10^(10:15)),-Inf) # handles large negative numbers
+})
+```
+
+Hooray!
