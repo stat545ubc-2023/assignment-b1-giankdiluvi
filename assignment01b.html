@@ -361,7 +361,7 @@ is a useful function to have around—in my research, I always have a
 script with auxiliary functions and this is one of them. The idea is
 that <span class="math inline">\(\log\sum_{n=1}^N \exp(x_n)\)</span> can
 be prone to underflow if any <span class="math inline">\(x_n\)</span> is
-very negative, say in the order of <span class="math inline">\(10^{-10}\)</span>. This seems niche but is
+a very large negative, say in the order of <span class="math inline">\(-10^{10}\)</span>. This seems niche but is
 actually pretty common when dealing with, e.g., mixture models. In that
 setting, <span class="math inline">\(x_n\)</span> will correspond to a
 log pdf, which can have arbitrarily small values. The LogSumExp trick
@@ -414,7 +414,7 @@ negative but not <span class="math inline">\(-\infty\)</span>.</p>
 <p>Now a more realistic example where the trick also helps. Suppose we
 want to evaluate the log pdf of a mixture model with 10 elements in the
 mixture: <span class="math display">\[
-  \ log p(x) = \log \sum_{n=1}^{10} p_n(x),
+  \log p(x) = \log \sum_{n=1}^{10} p_n(x),
 \]</span> where <span class="math inline">\(p_n(x)\)</span> is the pdf
 of the <span class="math inline">\(n\)</span>th mixture element, which
 in our case is a Normal<span class="math inline">\((10n,0.1^2)\)</span>

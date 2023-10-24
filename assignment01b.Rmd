@@ -13,8 +13,8 @@ I'll code the [LogSumExp trick](https://en.wikipedia.org/wiki/LogSumExp).
 This is a useful function to have around&mdash;in my research,
 I always have a script with auxiliary functions and this is one of them.
 The idea is that $\log\sum_{n=1}^N \exp(x_n)$
-can be prone to underflow if any $x_n$ is very negative, 
-say in the order of $10^{-10}$.
+can be prone to underflow if any $x_n$ is a very large negative, 
+say in the order of $-10^{10}$.
 This seems niche but is actually pretty common when dealing with, e.g.,
 mixture models.
 In that setting, $x_n$ will correspond to a log pdf,
@@ -85,7 +85,7 @@ Now a more realistic example where the trick also helps.
 Suppose we want to evaluate the log pdf of a mixture model
 with 10 elements in the mixture:
 $$
-  \ log p(x) = \log \sum_{n=1}^{10} p_n(x),
+  \log p(x) = \log \sum_{n=1}^{10} p_n(x),
 $$
 where $p_n(x)$ is the pdf of the $n$th mixture element,
 which in our case is a Normal$(10n,0.1^2)$ distribution.
