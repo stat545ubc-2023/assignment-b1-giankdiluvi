@@ -1,0 +1,57 @@
+---
+title: "Assignment 1b"
+author: "Gian Carlo Diluvi"
+date: "November 2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+I'll code the [LogSumExp trick](https://en.wikipedia.org/wiki/LogSumExp).
+This is a useful function to have around&mdash;in my research,
+I always have a script with auxiliary functions and this is one of them.
+The idea is that $\log\sum_{n=1}^N \exp(x_n)$
+can be prone to underflow if any $x_n$ is very negative, 
+say in the order of $10^{-10}$.
+This seems niche but is actually pretty common when dealing with, e.g.,
+mixture models.
+In that setting, $x_n$ will correspond to a log pdf,
+which can have arbitrarily small values.
+The LogSumExp trick refers to the fact that
+$$
+  \log\sum_{n=1}^N \exp(x_n)
+  = x^\star + \log\sum_{n=1}^N \exp(x_n-x^\star)
+$$
+for any $x^\star$. Taking $x^\star = \max(x_1,\dots,x_N)$
+guarantees that $\exp(x_n-x^\star)\leq 1$,
+which makes the resulting operation more numerically stable.
+
+```{r logsumexp, include=TRUE}
+#' LogSumExp
+#' 
+#' Compute log(sum(exp(x))) in a numerically-stable fashion
+#'
+#' @param x numeric, ideally a vector 
+#' (name rationale: usual name for variable in my research area is x)
+#' Ellipses added for max and exp functions, e.g. to remove NAs from x
+#' 
+#' @return numeric, single number
+logsumexp <- function(x,...){
+  x_max <- max(x,...)
+  result <- x_max + log(sum(exp(x-x_max,...)))
+  return(result)
+}
+
+```
+
+
+## Some examples
+
+```{r}
+my_x = c(-1e5,-1e12)
+logsumexp(my_x)
+log(sum(exp(my_x)))
+```
+
